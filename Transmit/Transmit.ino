@@ -57,7 +57,7 @@ if (role == 1)  {
     
     Serial.println(F("Now sending"));
 
-    double start_time = micros();                             // Take the time, and send it.  This will block until complete
+    double start_time[1000] = micros();                             // Take the time, and send it.  This will block until complete
      if (!radio.write( &start_time, sizeof(unsigned long) )){
        Serial.println(F("failed"));
      }
@@ -77,26 +77,31 @@ if (role == 1)  {
     if ( timeout ){                                             // Describe the results
         Serial.println(F("Failed, response timed out."));
     }else{
-        unsigned long got_time;                                 // Grab the response, compare, and send to debugging spew
-        radio.read( &got_time, sizeof(unsigned long) );
-        unsigned long end_time = micros();
+        double got_time[1000];                                 // Grab the response, compare, and send to debugging spew
+        radio.read( &got_time[n], sizeof(double) );
+        double end_time[1000] = micros();
         
 //         Spew it
+      for (int n=0; n<1000; n++)
+      {
         Serial.print(F("Sent "));
-        Serial.print(start_time);
+        Serial.print(start_time[n]);
         Serial.print(F(", Got response "));
-        Serial.print(got_time);
+        Serial.print(got_time[n]);
         Serial.print(F(", Round-trip delay "));
-        Serial.print((end_time-start_time)/1000);
+        Serial.print((end_time[n]-start_time[n])/1000);
         Serial.println(F(" milliseconds"));
+      }
 //        Serial.print(x);
 
 //        Serial.println((end_time-start_time)/1000);
-
-          
+double average_round_trip;
+for (int n=0; n<1000; n++)
+  average_round_trip=average_round_trip+(end_time[n]-start_time[n])/1000;
+average_round_trip=average_round_trip/size(end_time);//an average is taken
      
     }
-
+Serial.println("Average Round Trip: %d", %average_round_trip);
     // Try again 1s later
     x = x + 1;
     delay(500);
@@ -108,19 +113,22 @@ if (role == 1)  {
 
   if ( role == 0 )
   {
-    unsigned long got_time;
-    
+    double got_time;
+    int n=0;
     if( radio.available()){
                                                                     // Variable for the received timestamp
-      while (radio.available()) {                                   // While there is data ready
-        radio.read( &got_time, sizeof(unsigned long) );             // Get the payload
+      while (radio.available() && n<1000) {                                   // While there is data ready
+        radio.read( &got_time[n], sizeof(double) );             // Get the payload
+        n++;
       }
      
       radio.stopListening();                                        // First, stop listening so we can talk   
-      radio.write( &got_time, sizeof(unsigned long) );              // Send the final one back.      
+      for (int n=0; n<1000; n++)
+        radio.write( &got_time[n], sizeof(double) );              // Send the final one back.      
       radio.startListening();                                       // Now, resume listening so we catch the next packets.     
       Serial.print(F("Sent response "));
-      Serial.println(got_time);  
+      for (n=0; n<1000; n++)
+        Serial.println(got_time[n]);  
    }
  }
 
